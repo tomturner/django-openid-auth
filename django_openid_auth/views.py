@@ -146,13 +146,16 @@ def login_begin(request, template_name='openid/login.html',
                 login_complete_view='openid-complete',
                 form_class=OpenIDLoginForm,
                 render_failure=default_render_failure,
-                redirect_field_name=REDIRECT_FIELD_NAME):
+                redirect_field_name=REDIRECT_FIELD_NAME,
+				openid_url=None):
     """Begin an OpenID login request, possibly asking for an identity URL."""
     redirect_to = request.REQUEST.get(redirect_field_name, '')
 
-    # Get the OpenID URL to try.  First see if we've been configured
+    # If the OpenID URL hasn't been passed to the view, get the 
+	# OpenID URL to try.  First see if we've been configured
     # to use a fixed server URL.
-    openid_url = getattr(settings, 'OPENID_SSO_SERVER_URL', None)
+	if openid_url is None:
+		openid_url = getattr(settings, 'OPENID_SSO_SERVER_URL', None)
 
     if openid_url is None:
         if request.POST:
