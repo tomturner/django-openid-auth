@@ -81,6 +81,8 @@ class OpenIDBackend:
         except UserOpenID.DoesNotExist:
             if getattr(settings, 'OPENID_CREATE_USERS', False):
                 user = self.create_user_from_openid(openid_response)
+            if getattr(settings, 'OPENID_GET_USERS', False):
+                user = self.get_user_from_openid(openid_response)
         else:
             user = user_openid.user
 
@@ -274,6 +276,32 @@ class OpenIDBackend:
             openid_response.identity_url)
 
         user = User.objects.create_user(username, email, password=None)
+        self.associate_openid(user, openid_response)
+        self.update_user_details(user, details, openid_response)
+
+        return user
+    
+    def get_user_from_openid(self, openid_response):
+        details = self._extract_user_details(openid_response)
+        required_attrs = getattr(settings, 'OPENID_SREG_REQUIRED_FIELDS', [])
+        if getattr(settings, 'OPENID_STRICT_USERNAMES', False):
+            required_attrs.append('nickname')
+
+        for required_attr in required_attrs:
+            if required_attr not in details or not details[required_attr]:
+                raise RequiredAttributeNotReturned(
+                    "An attribute required for logging in was not "
+                    "returned ({0}).".format(required_attr))
+
+        nickname = self._get_preferred_username(details['nickname'],
+            details['email'])
+        email = details['email'] or ''
+
+        # Here we assume that the existing user had their username fetched
+        # from the OpenID provider
+        username = nickname
+
+        user = User.objects.get(username=username, email=email, password=None)
         self.associate_openid(user, openid_response)
         self.update_user_details(user, details, openid_response)
 
