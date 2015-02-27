@@ -301,7 +301,7 @@ class OpenIDBackend:
         # from the OpenID provider
         username = nickname
 
-        user = User.objects.get(username=username, email=email, password=None)
+        user = User.objects.get(username=username, email=email)
         self.associate_openid(user, openid_response)
         self.update_user_details(user, details, openid_response)
 
