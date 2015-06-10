@@ -16,22 +16,20 @@ We created this fork so the project can be used on Django 1.8
 Basic Installation
 ------------------
 
-0. Install the Jan Rain Python OpenID library.  It can be found at:
+1. Install the Jan Rain Python OpenID library.  It can be found at:
 
         http://openidenabled.com/python-openid/
 
     It can also be found in most Linux distributions packaged as
     "python-openid".  You will need version 2.2.0 or later.
 
-1. If you are using Django 1.6, configure your project to use the
-    pickle based session serializer:
+2. If you are using Django 1.6, configure your project to use the pickle based session serializer:
 
 .. code-block:: python
 
         SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
-2. Add 'django_openid_auth' to INSTALLED_APPS for your application.
-    At a minimum, you'll need the following in there:
+3. Add 'django_openid_auth' to INSTALLED_APPS for your application. At a minimum, you'll need the following in there:
 
 .. code-block:: python
 
@@ -42,9 +40,7 @@ Basic Installation
             'django_openid_auth',
         )
 
-3. Add 'django_auth_openid.auth.OpenIDBackend' to
-    AUTHENTICATION_BACKENDS.  This should be in addition to the
-    default ModelBackend:
+4. Add 'django_auth_openid.auth.OpenIDBackend' to AUTHENTICATION_BACKENDS. This should be in addition to the default ModelBackend:
 
 .. code-block:: python
 
@@ -53,22 +49,20 @@ Basic Installation
             'django.contrib.auth.backends.ModelBackend',
         )
 
-4. To create users automatically when a new OpenID is used, add the
-    following to the settings:
+5. To create users automatically when a new OpenID is used, add the following to the settings:
 
 .. code-block:: python
 
         OPENID_CREATE_USERS = True
 
-5. To have user details updated from OpenID Simple Registration or
-    Attribute Exchange extension data each time they log in, add the
-    following:
+6. To have user details updated from OpenID Simple Registration or Attribute Exchange extension data each
+ time they log in, add the following:
 
 .. code-block:: python
 
         OPENID_UPDATE_DETAILS_FROM_SREG = True
 
-6. Hook up the login URLs to your application's urlconf with
+7. Hook up the login URLs to your application's urlconf with
     something like:
 
 .. code-block:: python
@@ -79,7 +73,7 @@ Basic Installation
             ...
         )
 
-7. Configure the LOGIN_URL and LOGIN_REDIRECT_URL appropriately for
+8. Configure the LOGIN_URL and LOGIN_REDIRECT_URL appropriately for
     your site:
 
 .. code-block:: python
@@ -90,7 +84,7 @@ Basic Installation
     This will allow pages that use the standard @login_required
     decorator to use the OpenID login page.
 
-8. Rerun "python manage.py syncdb" to add the UserOpenID table to
+9. Rerun "python manage.py syncdb" to add the UserOpenID table to
     your database.
 
 
