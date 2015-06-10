@@ -27,13 +27,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 """Glue between OpenID and django.contrib.auth."""
+from django.contrib.auth import get_user_model
 
 __metaclass__ = type
 
 import re
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth.models import Group, Permission
 from openid.consumer.consumer import SUCCESS
 from openid.extensions import ax, sreg, pape
 
@@ -48,17 +49,20 @@ from django_openid_auth.exceptions import (
 )
 
 
-class OpenIDBackend:
+class OpenIDBackend(object):
+
     """A django.contrib.auth backend that authenticates the user based on
     an OpenID response."""
 
     supports_object_permissions = False
     supports_anonymous_user = True
 
-    def get_user(self, user_id):
+    @staticmethod
+    def get_user(user_id):
+
         try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
+            return get_user_model().objects.get(pk=user_id)
+        except get_user_model().DoesNotExist:
             return None
 
     def authenticate(self, **kwargs):
@@ -123,7 +127,8 @@ class OpenIDBackend:
 
         return user
 
-    def _extract_user_details(self, openid_response):
+    @staticmethod
+    def _extract_user_details(openid_response):
         email = fullname = first_name = last_name = nickname = None
         verified = 'no'
         sreg_response = sreg.SRegResponse.fromSuccessResponse(openid_response)
@@ -180,7 +185,8 @@ class OpenIDBackend:
         return dict(email=email, nickname=nickname, account_verified=verified,
                     first_name=first_name, last_name=last_name)
 
-    def _get_preferred_username(self, nickname, email):
+    @staticmethod
+    def _get_preferred_username(nickname, email):
         if nickname:
             return nickname
         if email and getattr(settings, 'OPENID_USE_EMAIL_FOR_USERNAME', False):
@@ -189,7 +195,8 @@ class OpenIDBackend:
                 return suggestion
         return 'openiduser'
 
-    def _get_available_username(self, nickname, identity_url):
+    @staticmethod
+    def _get_available_username(nickname, identity_url):
         # If we're being strict about usernames, throw an error if we didn't
         # get one back from the provider
         if getattr(settings, 'OPENID_STRICT_USERNAMES', False):
@@ -201,8 +208,8 @@ class OpenIDBackend:
 
         # See if we already have this nickname assigned to a username
         try:
-            user = User.objects.get(username__exact=nickname)
-        except User.DoesNotExist:
+            get_user_model().objects.get(username__exact=nickname)
+        except get_user_model().DoesNotExist:
             # No conflict, we can use this nickname
             return nickname
 
@@ -233,9 +240,8 @@ class OpenIDBackend:
             # No user associated with this identity_url
             pass
 
-
         if getattr(settings, 'OPENID_STRICT_USERNAMES', False):
-            if User.objects.filter(username__exact=nickname).count() > 0:
+            if get_user_model().objects.filter(username__exact=nickname).count() > 0:
                 raise DuplicateUsernameViolation(
                     "The username (%s) with which you tried to log in is "
                     "already in use for a different account." % nickname)
@@ -244,14 +250,15 @@ class OpenIDBackend:
         # checking for conflicts.  Start with number of existing users who's
         # username starts with this nickname to avoid having to iterate over
         # all of the existing ones.
-        i = User.objects.filter(username__startswith=nickname).count() + 1
+        i = get_user_model().objects.filter(username__startswith=nickname).count() + 1
+        username = None
         while True:
             username = nickname
             if i > 1:
                 username += str(i)
             try:
-                user = User.objects.get(username__exact=username)
-            except User.DoesNotExist:
+                get_user_model().objects.get(username__exact=username)
+            except get_user_model().DoesNotExist:
                 break
             i += 1
         return username
@@ -268,14 +275,12 @@ class OpenIDBackend:
                     "An attribute required for logging in was not "
                     "returned ({0}).".format(required_attr))
 
-        nickname = self._get_preferred_username(details['nickname'],
-            details['email'])
+        nickname = self._get_preferred_username(details['nickname'], details['email'])
         email = details['email'] or ''
 
-        username = self._get_available_username(nickname,
-            openid_response.identity_url)
+        username = self._get_available_username(nickname, openid_response.identity_url)
 
-        user = User.objects.create_user(username, email, password=None)
+        user = get_user_model().objects.create_user(username, email, password=None)
         self.associate_openid(user, openid_response)
         self.update_user_details(user, details, openid_response)
 
@@ -293,22 +298,24 @@ class OpenIDBackend:
                     "An attribute required for logging in was not "
                     "returned ({0}).".format(required_attr))
 
-        nickname = self._get_preferred_username(details['nickname'],
-            details['email'])
+        nickname = self._get_preferred_username(details['nickname'], details['email'])
         email = details['email'] or ''
 
         # Here we assume that the existing user had their username fetched
         # from the OpenID provider
         username = nickname
 
-        user = User.objects.get(username=username, email=email)
+        user = get_user_model().objects.get(username=username, email=email)
         self.associate_openid(user, openid_response)
         self.update_user_details(user, details, openid_response)
 
         return user
 
-    def associate_openid(self, user, openid_response):
-        """Associate an OpenID with a user account."""
+    @staticmethod
+    def associate_openid(user, openid_response):
+        """
+        Associate an OpenID with a user account.
+        """
         # Check to see if this OpenID has already been claimed.
         try:
             user_openid = UserOpenID.objects.get(
@@ -343,7 +350,7 @@ class OpenIDBackend:
                 details['nickname'], openid_response.identity_url)
             updated = True
         account_verified = details.get('account_verified', None)
-        if (account_verified is not None):
+        if account_verified is not None:
             permission = Permission.objects.get(codename='account_verified')
             perm_label = '%s.%s' % (permission.content_type.app_label,
                                     permission.codename)
@@ -355,12 +362,13 @@ class OpenIDBackend:
         if updated:
             user.save()
 
-    def get_teams_mapping(self):
+    @staticmethod
+    def get_teams_mapping():
         teams_mapping_auto = getattr(settings, 'OPENID_LAUNCHPAD_TEAMS_MAPPING_AUTO', False)
         teams_mapping_auto_blacklist = getattr(settings, 'OPENID_LAUNCHPAD_TEAMS_MAPPING_AUTO_BLACKLIST', [])
         teams_mapping = getattr(settings, 'OPENID_LAUNCHPAD_TEAMS_MAPPING', {})
         if teams_mapping_auto:
-            #ignore teams_mapping. use all django-groups
+            # ignore teams_mapping. use all django-groups
             teams_mapping = dict()
             all_groups = Group.objects.exclude(name__in=teams_mapping_auto_blacklist)
             for group in all_groups:
@@ -372,18 +380,16 @@ class OpenIDBackend:
         if len(teams_mapping) == 0:
             return
 
-        current_groups = set(user.groups.filter(
-                name__in=teams_mapping.values()))
+        current_groups = set(user.groups.filter(name__in=teams_mapping.values()))
         desired_groups = set(Group.objects.filter(
-                name__in=[teams_mapping[lp_team]
-                          for lp_team in teams_response.is_member
-                          if lp_team in teams_mapping]))
+            name__in=[teams_mapping[lp_team] for lp_team in teams_response.is_member if lp_team in teams_mapping]))
         for group in current_groups - desired_groups:
             user.groups.remove(group)
         for group in desired_groups - current_groups:
             user.groups.add(group)
 
-    def update_staff_status_from_teams(self, user, teams_response):
+    @staticmethod
+    def update_staff_status_from_teams(user, teams_response):
         if not hasattr(settings, 'OPENID_LAUNCHPAD_STAFF_TEAMS'):
             return
 

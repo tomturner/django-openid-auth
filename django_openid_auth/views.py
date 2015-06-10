@@ -40,10 +40,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
-try:
-    from django.views.decorators.csrf import csrf_exempt
-except ImportError:
-    from django.contrib.csrf.middleware import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt
 
 from openid.consumer.consumer import (
     Consumer, SUCCESS, CANCEL, FAILURE)
@@ -59,27 +56,28 @@ from django_openid_auth.exceptions import (
     DjangoOpenIDException,
 )
 
-
 next_url_re = re.compile('^/[-\w/]+$')
 
-def is_valid_next_url(next):
+
+def is_valid_next_url(next_url):
     # When we allow this:
     #   /openid/?next=/welcome/
     # For security reasons we want to restrict the next= bit to being a local
     # path, not a complete URL.
-    return bool(next_url_re.match(next))
+    return bool(next_url_re.match(next_url))
 
 
 def sanitise_redirect_url(redirect_to):
-    """Sanitise the redirection URL."""
+    """
+    Sanitise the redirection URL.
+    """
     # Light security check -- make sure redirect_to isn't garbage.
     is_valid = True
     if not redirect_to or ' ' in redirect_to:
         is_valid = False
     elif '//' in redirect_to:
         # Allow the redirect URL to be external if it's a permitted domain
-        allowed_domains = getattr(settings,
-            "ALLOWED_EXTERNAL_OPENID_REDIRECT_DOMAINS", [])
+        allowed_domains = getattr(settings, "ALLOWED_EXTERNAL_OPENID_REDIRECT_DOMAINS", [])
         s, netloc, p, q, f = urlsplit(redirect_to)
         # allow it if netloc is blank or if the domain is allowed
         if netloc:
@@ -97,7 +95,9 @@ def sanitise_redirect_url(redirect_to):
 
 
 def make_consumer(request):
-    """Create an OpenID Consumer object for the given Django request."""
+    """
+    Create an OpenID Consumer object for the given Django request.
+    """
     # Give the OpenID library its own space in the session object.
     session = request.session.setdefault('OPENID', {})
     store = DjangoOpenIDStore()
@@ -105,7 +105,9 @@ def make_consumer(request):
 
 
 def render_openid_request(request, openid_request, return_to, trust_root=None):
-    """Render an OpenID authentication request."""
+    """
+    Render an OpenID authentication request.
+    """
     if trust_root is None:
         trust_root = getattr(settings, 'OPENID_TRUST_ROOT',
                              request.build_absolute_uri('/'))
@@ -123,7 +125,9 @@ def render_openid_request(request, openid_request, return_to, trust_root=None):
 def default_render_failure(request, message, status=403,
                            template_name='openid/failure.html',
                            exception=None):
-    """Render an error page to the user."""
+    """
+    Render an error page to the user.
+    """
     data = render_to_string(
         template_name, dict(message=message, exception=exception),
         context_instance=RequestContext(request))
@@ -131,10 +135,10 @@ def default_render_failure(request, message, status=403,
 
 
 def parse_openid_response(request):
-    """Parse an OpenID response from a Django request."""
+    """
+    Parse an OpenID response from a Django request.
+    """
     # Short cut if there is no request parameters.
-    #if len(request.REQUEST) == 0:
-    #    return None
 
     current_url = request.build_absolute_uri()
 
@@ -167,10 +171,9 @@ def login_begin(request, template_name='openid/login.html',
 
         # Invalid or no form data:
         if openid_url is None:
-            return render_to_response(template_name, {
-                    'form': login_form,
-                    redirect_field_name: redirect_to
-                    }, context_instance=RequestContext(request))
+            return render_to_response(template_name,
+                                      {'form': login_form, redirect_field_name: redirect_to},
+                                      context_instance=RequestContext(request))
 
     consumer = make_consumer(request)
     try:
@@ -190,18 +193,18 @@ def login_begin(request, template_name='openid/login.html',
         # first/last components since some providers offer one but not
         # the other.
         for (attr, alias) in [
-                ('http://axschema.org/contact/email', 'email'),
-                ('http://axschema.org/namePerson', 'fullname'),
-                ('http://axschema.org/namePerson/first', 'firstname'),
-                ('http://axschema.org/namePerson/last', 'lastname'),
-                ('http://axschema.org/namePerson/friendly', 'nickname'),
-                # The myOpenID provider advertises AX support, but uses
-                # attribute names from an obsolete draft of the
-                # specification.  We request them for compatibility.
-                ('http://schema.openid.net/contact/email', 'old_email'),
-                ('http://schema.openid.net/namePerson', 'old_fullname'),
-                ('http://schema.openid.net/namePerson/friendly',
-                 'old_nickname')]:
+            ('http://axschema.org/contact/email', 'email'),
+            ('http://axschema.org/namePerson', 'fullname'),
+            ('http://axschema.org/namePerson/first', 'firstname'),
+            ('http://axschema.org/namePerson/last', 'lastname'),
+            ('http://axschema.org/namePerson/friendly', 'nickname'),
+            # The myOpenID provider advertises AX support, but uses
+            # attribute names from an obsolete draft of the
+            # specification.  We request them for compatibility.
+            ('http://schema.openid.net/contact/email', 'old_email'),
+            ('http://schema.openid.net/namePerson', 'old_fullname'),
+            ('http://schema.openid.net/namePerson/friendly',
+             'old_nickname')]:
             fetch_request.add(ax.AttrInfo(attr, alias=alias, required=True))
 
         # conditionally require account_verified attribute
@@ -225,11 +228,10 @@ def login_begin(request, template_name='openid/login.html',
         sreg_optional_fields.extend(
             getattr(settings, 'OPENID_SREG_EXTRA_FIELDS', []))
         sreg_optional_fields = [
-            field for field in sreg_optional_fields if (
-                not field in sreg_required_fields)]
+            field for field in sreg_optional_fields if (field not in sreg_required_fields)]
         openid_request.addExtension(
             sreg.SRegRequest(optional=sreg_optional_fields,
-                required=sreg_required_fields))
+                             required=sreg_required_fields))
 
     if getattr(settings, 'OPENID_PHYSICAL_MULTIFACTOR_REQUIRED', False):
         preferred_auth = [
@@ -243,7 +245,7 @@ def login_begin(request, template_name='openid/login.html',
     teams_mapping_auto_blacklist = getattr(settings, 'OPENID_LAUNCHPAD_TEAMS_MAPPING_AUTO_BLACKLIST', [])
     launchpad_teams = getattr(settings, 'OPENID_LAUNCHPAD_TEAMS_MAPPING', {})
     if teams_mapping_auto:
-        #ignore launchpad teams. use all django-groups
+        # ignore launchpad teams. use all django-groups
         launchpad_teams = dict()
         all_groups = Group.objects.exclude(name__in=teams_mapping_auto_blacklist)
         for group in all_groups:
@@ -273,9 +275,9 @@ def login_begin(request, template_name='openid/login.html',
 def login_complete(request, redirect_field_name=REDIRECT_FIELD_NAME,
                    render_failure=None):
     redirect_to = request.REQUEST.get(redirect_field_name, '')
-    render_failure = render_failure or \
-                     getattr(settings, 'OPENID_RENDER_FAILURE', None) or \
-                     default_render_failure
+    render_failure = (render_failure
+                      or getattr(settings, 'OPENID_RENDER_FAILURE', None)
+                      or default_render_failure)
 
     openid_response = parse_openid_response(request)
     if not openid_response:
@@ -295,7 +297,7 @@ def login_complete(request, redirect_field_name=REDIRECT_FIELD_NAME,
 
                 # Notify any listeners that we successfully logged in.
                 openid_login_complete.send(sender=UserOpenID, request=request,
-                    openid_response=openid_response)
+                                           openid_response=openid_response)
 
                 return response
             else:
@@ -305,7 +307,7 @@ def login_complete(request, redirect_field_name=REDIRECT_FIELD_NAME,
     elif openid_response.status == FAILURE:
         return render_failure(
             request, 'OpenID authentication failed: %s' %
-            openid_response.message)
+                     openid_response.message)
     elif openid_response.status == CANCEL:
         return render_failure(request, 'Authentication cancelled')
     else:

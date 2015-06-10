@@ -26,11 +26,9 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+from django.conf import settings
 
-from django.contrib.auth.models import (
-    Permission,
-    User,
-)
+from django.contrib.auth.models import Permission
 from django.db import models
 
 
@@ -46,7 +44,7 @@ class Nonce(models.Model):
 class Association(models.Model):
     server_url = models.TextField(max_length=2047)
     handle = models.CharField(max_length=255)
-    secret = models.TextField(max_length=255) # Stored base64 encoded
+    secret = models.TextField(max_length=255)  # Stored base64 encoded
     issued = models.IntegerField()
     lifetime = models.IntegerField()
     assoc_type = models.TextField(max_length=64)
@@ -56,7 +54,7 @@ class Association(models.Model):
 
 
 class UserOpenID(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL)
     claimed_id = models.TextField(max_length=2047, unique=True)
     display_id = models.TextField(max_length=2047)
 

@@ -39,7 +39,7 @@ from django_openid_auth.models import Association, Nonce
 
 class DjangoOpenIDStore(OpenIDStore):
     def __init__(self):
-        self.max_nonce_age = 6 * 60 * 60 # Six hours
+        self.max_nonce_age = 6 * 60 * 60  # Six hours
 
     def storeAssociation(self, server_url, association):
         try:
@@ -61,7 +61,6 @@ class DjangoOpenIDStore(OpenIDStore):
         assoc.save()
 
     def getAssociation(self, server_url, handle=None):
-        assocs = []
         if handle is not None:
             assocs = Association.objects.filter(
                 server_url=server_url, handle=handle)
@@ -71,8 +70,8 @@ class DjangoOpenIDStore(OpenIDStore):
         expired = []
         for assoc in assocs:
             association = OIDAssociation(
-                assoc.handle, base64.decodestring(assoc.secret), assoc.issued,
-                assoc.lifetime, assoc.assoc_type
+                str(assoc.handle), base64.decodestring(assoc.secret), assoc.issued,
+                assoc.lifetime, str(assoc.assoc_type)
             )
             if association.getExpiresIn() == 0:
                 expired.append(assoc)
@@ -98,7 +97,7 @@ class DjangoOpenIDStore(OpenIDStore):
             return False
 
         try:
-            ononce = Nonce.objects.get(
+            Nonce.objects.get(
                 server_url__exact=server_url,
                 timestamp__exact=timestamp,
                 salt__exact=salt)

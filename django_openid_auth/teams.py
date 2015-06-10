@@ -64,16 +64,10 @@ will be provided:
 @since: 2.1.1
 """
 
-from openid.message import registerNamespaceAlias, \
-     NamespaceAliasRegistrationError
+from openid.message import registerNamespaceAlias, NamespaceAliasRegistrationError
 from openid.extension import Extension
 from openid import oidutil
 
-try:
-    basestring #pylint:disable-msg=W0104
-except NameError:
-    # For Python 2.2
-    basestring = (str, unicode) #pylint:disable-msg=W0622
 
 __all__ = [
     'TeamsRequest',
