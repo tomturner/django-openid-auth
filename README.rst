@@ -62,8 +62,7 @@ Basic Installation
 
         OPENID_UPDATE_DETAILS_FROM_SREG = True
 
-7. Hook up the login URLs to your application's urlconf with
-    something like:
+7. Hook up the login URLs to your application's urlconf with something like:
 
 .. code-block:: python
 
@@ -73,19 +72,18 @@ Basic Installation
             ...
         )
 
-8. Configure the LOGIN_URL and LOGIN_REDIRECT_URL appropriately for
-    your site:
+8. Configure the LOGIN_URL and LOGIN_REDIRECT_URL appropriately for your site:
 
 .. code-block:: python
 
         LOGIN_URL = '/openid/login/'
         LOGIN_REDIRECT_URL = '/'
 
+
     This will allow pages that use the standard @login_required
     decorator to use the OpenID login page.
 
-9. Rerun "python manage.py syncdb" to add the UserOpenID table to
-    your database.
+9. Rerun "python manage.py syncdb" to add the UserOpenID table to your database.
 
 
 Configuring Single Sign-On
