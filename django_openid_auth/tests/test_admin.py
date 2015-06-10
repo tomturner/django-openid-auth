@@ -32,7 +32,8 @@ Tests for the django_openid_auth Admin login form replacement.
 import unittest
 
 from django.conf import settings
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 
 settings.OPENID_USE_AS_ADMIN_LOGIN = True
 
@@ -47,9 +48,10 @@ def create_user(is_staff=False, authenticated=True):
     if not authenticated:
         return AnonymousUser()
     else:
-        user = User(
-            username=u'testing', email='testing@example.com',
-            is_staff=is_staff)
+        user = get_user_model()
+        user.username = u'testing'
+        user.email = u'testing@example.com'
+        user.is_staff = is_staff
         user.set_password(u'test')
         user.save()
 

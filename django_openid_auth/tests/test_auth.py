@@ -29,6 +29,7 @@
 import unittest
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import (
     Group,
     Permission,
@@ -232,10 +233,10 @@ class OpenIDBackendTests(TestCase):
         self.backend.update_user_details(user, data, response)
 
         # refresh object from the database
-        user = User.objects.get(pk=user.pk)
+        user = get_user_model().objects.get(pk=user.pk)
         # check the verification status
-        self.assertEqual(user.has_perm('django_openid_auth.account_verified'),
-                         expected)
+        user_permission = user.has_perm('django_openid_auth.account_verified')
+        self.assertEqual(user_permission, expected)
 
     def test_update_user_perms_unverified(self):
         user_openid = self.make_user_openid()

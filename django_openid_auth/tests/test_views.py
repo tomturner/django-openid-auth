@@ -32,6 +32,7 @@ import unittest
 from urllib import quote_plus
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User, Group, Permission
 from django.http import HttpRequest, HttpResponse
 from django.test import TestCase
@@ -1357,8 +1358,8 @@ class RelyingPartyTests(TestCase):
         self.assertTrue(group3 not in user.groups.all())
 
     def test_login_teams_staff_not_defined(self):
-        assert getattr(settings, 'OPENID_LAUNCHPAD_STAFF_TEAMS', None) is None
-        user = User.objects.create_user('testuser', 'someone@example.com')
+        # assert getattr(settings, 'OPENID_LAUNCHPAD_STAFF_TEAMS', None) is None
+        user = get_user_model().objects.create_user('testuser', 'someone@example.com')
         user.is_staff = True
         user.save()
         self.assertTrue(user.is_staff)
