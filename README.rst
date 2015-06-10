@@ -80,8 +80,8 @@ Basic Installation
         LOGIN_REDIRECT_URL = '/'
 
 
-    This will allow pages that use the standard @login_required
-    decorator to use the OpenID login page.
+ This will allow pages that use the standard @login_required
+ decorator to use the OpenID login page.
 
 9. Rerun "python manage.py syncdb" to add the UserOpenID table to your database.
 
