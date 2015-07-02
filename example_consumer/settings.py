@@ -40,11 +40,19 @@ ADMINS = (
 MANAGERS = ADMINS
 
 
+import os
+import sys
+
+OPEN_ID_AUTH_APPS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+sys.path.insert(0, OPEN_ID_AUTH_APPS_DIR)
+
+
 csrf_middleware = 'django.middleware.csrf.CsrfViewMiddleware'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'sqlite.db',
+        'NAME': 'db.sqlite3',
     }
 }
 TEMPLATE_LOADERS = (
@@ -130,13 +138,17 @@ OPENID_VALID_VERIFICATION_SCHEMES = {
     None: (),
 }
 
-# If set, always use this as the identity URL rather than asking the
-# user.  This only makes sense if it is a server URL.
-OPENID_SSO_SERVER_URL = 'https://login.launchpad.net/'
-
 # Tell django.contrib.auth to use the OpenID signin URLs.
 LOGIN_URL = '/openid/login/'
 LOGIN_REDIRECT_URL = '/'
 
 # Should django_auth_openid be used to sign into the admin interface?
 OPENID_USE_AS_ADMIN_LOGIN = False
+
+# django-openid-auth settings
+OPENID_GET_USERS = True
+OPENID_UPDATE_DETAILS_FROM_SREG = True
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+OPENID_SSO_SERVER_URL = 'http://127.0.0.1:8000/openid/xrds/'
+
+
